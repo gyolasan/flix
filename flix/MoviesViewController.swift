@@ -9,10 +9,14 @@
 import UIKit
 import AlamofireImage
 
-class MoviesViewController: UIViewController, UITableViewDataSource, UITableViewDelegate {
+class MoviesViewController: UIViewController, UITableViewDataSource, UITableViewDelegate, UISearchResultsUpdating {
     
     @IBOutlet weak var tableView: UITableView!
     var movies = [[String:Any]]()
+    let searchController = UISearchController(searchResultsController: nil)
+    
+    var titles = [String]()
+    var filteredMovies = [[String:Any]]()
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -22,7 +26,11 @@ class MoviesViewController: UIViewController, UITableViewDataSource, UITableView
         refreshControl.addTarget(self, action: #selector(refreshControlAction(_:)), for: UIControl.Event.valueChanged)
         tableView.insertSubview(refreshControl, at: 0)
 
-
+        
+        searchController.searchResultsUpdater = self
+        searchController.hidesNavigationBarDuringPresentation = false
+        searchController.dimsBackgroundDuringPresentation = true
+        tableView.tableHeaderView = searchController.searchBar
         
         tableView.dataSource = self
         tableView.delegate = self
@@ -38,8 +46,14 @@ class MoviesViewController: UIViewController, UITableViewDataSource, UITableView
                 let dataDictionary = try! JSONSerialization.jsonObject(with: data, options: []) as! [String: Any]
                 
                 self.movies = dataDictionary["results"] as! [[String:Any]]
-                
+                self.filteredMovies = self.movies
                 self.tableView.reloadData()
+                
+//                for i in 0...self.movies.count-1 {
+//                    let title = self.movies[i]["title"]
+//                    self.titles.append(title as! String)
+//                }
+//                print(self.titles)
                 // TODO: Get the array of movies
                 // TODO: Store the movies in a property to use elsewhere
                 // TODO: Reload your table view data
@@ -49,16 +63,14 @@ class MoviesViewController: UIViewController, UITableViewDataSource, UITableView
         task.resume()    }
     
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return movies.count
+        return filteredMovies.count
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "MovieCell") as! MovieCell
-        
-        let movie = movies[indexPath.row]
+        let movie = filteredMovies[indexPath.row]
         let title = movie["title"] as! String
         let description = movie["overview"] as! String
-        let rating = movie["vote_average"]
         
         cell.titleLabel.text = title
         cell.synopsisLabel.text = description
@@ -96,14 +108,15 @@ class MoviesViewController: UIViewController, UITableViewDataSource, UITableView
         task.resume()
     }
     
-    /*
-    // MARK: - Navigation
-
-    // In a storyboard-based application, you will often want to do a little preparation before navigation
-    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
-        // Get the new view controller using segue.destination.
-        // Pass the selected object to the new view controller.
+    func updateSearchResults(for searchController: UISearchController){
+        if let searchText = searchController.searchBar.text, !searchText.isEmpty {
+            filteredMovies = movies.filter { movie in
+                return (movie["title"] as! String).lowercased().contains(searchText.lowercased())
+            }
+        } else {
+            filteredMovies = movies
+        }
+        print(filteredMovies)
+        tableView.reloadData()
     }
-    */
-
 }
