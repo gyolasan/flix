@@ -119,4 +119,14 @@ class MoviesViewController: UIViewController, UITableViewDataSource, UITableView
         print(filteredMovies)
         tableView.reloadData()
     }
+    
+    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
+        let cell = sender as! UITableViewCell
+        let indexPath = tableView.indexPath(for: cell)!
+        let movie = filteredMovies[indexPath.row]
+        let detailsViewController = segue.destination as! MoviesDetailViewController
+        detailsViewController.movie = movie
+        
+        tableView.deselectRow(at: indexPath, animated: true)
+    }
 }
